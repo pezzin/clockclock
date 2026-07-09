@@ -51,6 +51,16 @@
     font-size:12px;
     transition:opacity .6s ease;
   }
+  #credit{
+    position:fixed;
+    bottom:6px;
+    left:50%;
+    transform:translateX(-50%);
+    color:var(--text-dim);
+    font-size:10px;
+    opacity:.6;
+    transition:opacity .6s ease;
+  }
   #fsBtn{
     position:fixed;
     bottom:14px;
@@ -71,13 +81,14 @@
   }
   #fsBtn:hover{ background:rgba(0,0,0,.55); }
 
-  body.idle #status, body.idle #fsBtn{ opacity:0; pointer-events:none; }
+  body.idle #status, body.idle #fsBtn, body.idle #credit{ opacity:0; pointer-events:none; }
   body.idle.is-fullscreen{ cursor:none; }
 </style>
 </head>
 <body>
 <div class="frame"><div class="grid" id="grid"></div></div>
 <div id="status">connessione...</div>
+<div id="credit">made by @pezzin</div>
 <button id="fsBtn" title="Schermo intero (o doppio click)">⛶</button>
 
 <script src="/socket.io/socket.io.js"></script>
