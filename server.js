@@ -15,7 +15,8 @@ let state = {
   mode: 'live',      // 'live' | 'custom' | 'wave' | 'park'
   customDigits: '',   // usato solo quando mode === 'custom'
   rows: 3,            // dimensioni della griglia di orologi
-  cols: 8
+  cols: 8,
+  handDuration: 0.6    // secondi per il movimento delle lancette
 };
 
 app.get('/', (req, res) => res.redirect('/admin'));

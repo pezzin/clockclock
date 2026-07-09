@@ -214,10 +214,15 @@ const ClockGrid = (function () {
       }, 1000);
     }
 
+    function setHandDuration(seconds) {
+      container.style.setProperty('--hand-duration', `${seconds}s`);
+    }
+
     function applyState(state) {
       if (!cfg || state.rows !== cfg.rows || state.cols !== cfg.cols) {
         build({ rows: state.rows || 3, cols: state.cols || 8 });
       }
+      setHandDuration(state.handDuration || 0.6);
       stopAnimation();
       if (state.mode === 'live') startLive();
       else if (state.mode === 'wave') startWave();

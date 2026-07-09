@@ -8,6 +8,7 @@
   --text-dim:#777;
   --clock-size:64px;
   --gap:0px;
+  --hand-duration:.6s;
 }
 *{box-sizing:border-box;}
 body{
@@ -49,5 +50,5 @@ body{
   transform-origin:50% 100%;
   margin-left:calc(var(--clock-size) * -.03);
   margin-top:calc(var(--clock-size) * -.5);
-  transition:transform .6s cubic-bezier(.65,0,.35,1);
+  transition:transform var(--hand-duration) cubic-bezier(.65,0,.35,1);
 }
