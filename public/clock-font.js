@@ -101,7 +101,7 @@ const ClockFont = (function () {
       [[N,E],[E,W],[N,W]],
     ],
     7: [
-      [[E,E],[E,W],[W,S]],
+      [[E,W],[E,W],[W,S]],
       [null, [E,S],[N,W]],
       [null, [N,S],null ],
       [null, [N,S],null ],
