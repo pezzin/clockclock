@@ -72,17 +72,17 @@ const ClockFont = (function () {
       [[E,S],[N,W],[N,S]],
       [[N,E],[E,W],[N,W]],
     ],
-    // 4: gamba discendente diagonale vera (non verticale) con punta libera
-    // in alto, come nel bozzetto del proprietario: il tratto scende da
-    // destra verso sinistra fino alla traversa, poi un gambo corto separato
-    // (col1) chiude con lo stesso piedino della barra destra (col2).
+    // 4: misurato pixel per pixel su foto prodotto. Due bandierine separate
+    // in alto (col0+col1 collegate, col2 indipendente), una tacca decorativa
+    // a meta' colonna centrale che non si collega a nulla, poi la traversa
+    // (col0->col1) e il gambo corto che chiude col1+col2 come piedino comune.
     4: [
-      [null,    null,     [W,S]],
-      [null,    [NE,SW],  [N,S]],
-      [[NE,S],  null,     [N,S]],
-      [[N,E],   [W,S],    [N,S]],
-      [null,    [N,S],    [N,S]],
-      [null,    [N,E],    [N,W]],
+      [[E,S], [W,S], [W,S]],
+      [[N,S], [N,S], [N,S]],
+      [[N,S], [N,E], [N,S]],
+      [[N,E], [W,S], [N,S]],
+      [null,  [N,S], [N,S]],
+      [null,  [N,E], [N,W]],
     ],
     5: [
       [[E,S],[E,W],[W,S]],
