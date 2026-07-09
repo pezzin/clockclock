@@ -15,13 +15,17 @@ const ClockFont = (function () {
     9: { A: 1, B: 1, C: 1, D: 1, E: 0, F: 1, G: 1 },
   };
 
+  // Angolo di riposo unico (lancette entrambe verso il basso) per i quadranti
+  // spenti: nel pannello vero questi restano quasi invisibili, un mix di
+  // angolazioni diverse per ruolo creava invece un disegno a losanghe.
+  const PARK = S;
   const ROLES = [
-    { dirs: [[E, 'A'], [S, 'F']], park: 135 },
-    { dirs: [[W, 'A'], [S, 'B']], park: 225 },
-    { dirs: [[N, 'F'], [S, 'E'], [E, 'G']], park: 45 },
-    { dirs: [[N, 'B'], [S, 'C'], [W, 'G']], park: 315 },
-    { dirs: [[N, 'E'], [E, 'D']], park: 45 },
-    { dirs: [[N, 'C'], [W, 'D']], park: 315 },
+    { dirs: [[E, 'A'], [S, 'F']], park: PARK },
+    { dirs: [[W, 'A'], [S, 'B']], park: PARK },
+    { dirs: [[N, 'F'], [S, 'E'], [E, 'G']], park: PARK },
+    { dirs: [[N, 'B'], [S, 'C'], [W, 'G']], park: PARK },
+    { dirs: [[N, 'E'], [E, 'D']], park: PARK },
+    { dirs: [[N, 'C'], [W, 'D']], park: PARK },
   ];
 
   function anglesForCell(digit, roleIndex) {

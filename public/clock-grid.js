@@ -35,7 +35,7 @@ const ClockGrid = (function () {
           const h2 = document.createElement('div'); h2.className = 'hand';
           clockDiv.appendChild(h1); clockDiv.appendChild(h2);
           container.appendChild(clockDiv);
-          clocks.push({ h1, h2, cum1: 135, cum2: 135 });
+          clocks.push({ h1, h2, cum1: 180, cum2: 180 });
         }
       }
       fitToViewport();
@@ -101,10 +101,9 @@ const ClockGrid = (function () {
     }
 
     function parkColumnRange(fromCol, toCol) {
+      const park = ClockFont.ROLES[0].park;
       for (let r = 0; r < cfg.rows; r++) {
         for (let c = fromCol; c < toCol; c++) {
-          const localRole = (r % 3) * 2 + (c % 2);
-          const park = ClockFont.ROLES[localRole].park;
           const clk = clocks[cellIndex(r, c)];
           setHandTarget(clk.h1, 'cum1', clk, park);
           setHandTarget(clk.h2, 'cum2', clk, park);
