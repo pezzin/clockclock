@@ -30,12 +30,11 @@ const ClockGrid = (function () {
         for (let c = 0; c < cfg.cols; c++) {
           const clockDiv = document.createElement('div');
           clockDiv.className = 'clock';
-          if (c % 2 === 1 && c < cfg.cols - 1) clockDiv.classList.add('digit-gap');
-          const h1 = document.createElement('div'); h1.className = 'hand';
-          const h2 = document.createElement('div'); h2.className = 'hand';
+          const h1 = document.createElement('div'); h1.className = 'hand parked';
+          const h2 = document.createElement('div'); h2.className = 'hand parked';
           clockDiv.appendChild(h1); clockDiv.appendChild(h2);
           container.appendChild(clockDiv);
-          clocks.push({ h1, h2, cum1: 180, cum2: 180 });
+          clocks.push({ h1, h2, cum1: 135, cum2: 135 });
         }
       }
       fitToViewport();
@@ -49,6 +48,16 @@ const ClockGrid = (function () {
       if (delta < -180) delta += 360;
       obj[cumProp] = current + delta;
       hand.style.transform = `rotate(${obj[cumProp]}deg)`;
+    }
+
+    // Imposta entrambe le lancette di un quadrante; `lit` false = quadrante
+    // spento, le lancette raggiungono comunque l'angolo di riposo ma svaniscono
+    // (nel prodotto vero i quadranti inattivi appaiono vuoti).
+    function setCell(clk, a1, a2, lit) {
+      setHandTarget(clk.h1, 'cum1', clk, a1);
+      setHandTarget(clk.h2, 'cum2', clk, a2);
+      clk.h1.classList.toggle('parked', !lit);
+      clk.h2.classList.toggle('parked', !lit);
     }
 
     function segActiveFor(digit, key) {
@@ -100,8 +109,9 @@ const ClockGrid = (function () {
             else if (r === bottomRow) active = segActiveFor(digit, 'D');
             [a1, a2] = active ? [ClockFont.E, ClockFont.W] : [park, park];
           }
-          setHandTarget(clk.h1, 'cum1', clk, a1);
-          setHandTarget(clk.h2, 'cum2', clk, a2);
+          // il riposo (135) non coincide mai con un tratto reale (N/E/S/W),
+          // quindi identifica con certezza un quadrante spento
+          setCell(clk, a1, a2, !(a1 === park && a2 === park));
         }
       }
     }
@@ -110,9 +120,7 @@ const ClockGrid = (function () {
       const park = ClockFont.ROLES[0].park;
       for (let r = 0; r < cfg.rows; r++) {
         for (let c = fromCol; c < toCol; c++) {
-          const clk = clocks[cellIndex(r, c)];
-          setHandTarget(clk.h1, 'cum1', clk, park);
-          setHandTarget(clk.h2, 'cum2', clk, park);
+          setCell(clocks[cellIndex(r, c)], park, park, false);
         }
       }
     }
@@ -157,8 +165,7 @@ const ClockGrid = (function () {
         clocks.forEach((clk, idx) => {
           const r = Math.floor(idx / cfg.cols), c = idx % cfg.cols;
           const phase = (t + c * 20 - r * 14) % 360;
-          setHandTarget(clk.h1, 'cum1', clk, phase);
-          setHandTarget(clk.h2, 'cum2', clk, phase + 180);
+          setCell(clk, phase, phase + 180, true);
         });
       }, 90);
     }
@@ -169,8 +176,7 @@ const ClockGrid = (function () {
       runAnimation(() => {
         const t = animTick * 8;
         clocks.forEach((clk) => {
-          setHandTarget(clk.h1, 'cum1', clk, t % 360);
-          setHandTarget(clk.h2, 'cum2', clk, (t + 180) % 360);
+          setCell(clk, t % 360, (t + 180) % 360, true);
         });
       }, 90);
     }
@@ -184,8 +190,7 @@ const ClockGrid = (function () {
           const r = Math.floor(idx / cfg.cols), c = idx % cfg.cols;
           const dist = Math.hypot(c - cx, r - cy);
           const phase = (t - dist * 26) % 360;
-          setHandTarget(clk.h1, 'cum1', clk, phase);
-          setHandTarget(clk.h2, 'cum2', clk, phase + 180);
+          setCell(clk, phase, phase + 180, true);
         });
       }, 90);
     }

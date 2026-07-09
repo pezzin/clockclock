@@ -7,8 +7,7 @@
   --text:#444;
   --text-dim:#777;
   --clock-size:64px;
-  --gap:8px;
-  --digit-gap-extra:22px;
+  --gap:0px;
 }
 *{box-sizing:border-box;}
 body{
@@ -43,13 +42,15 @@ body{
   position:absolute;
   left:50%;
   top:50%;
-  width:calc(var(--clock-size) * .08);
-  height:calc(var(--clock-size) * .42);
+  width:calc(var(--clock-size) * .06);
+  height:calc(var(--clock-size) * .5);
   background:var(--hand);
-  border-radius:calc(var(--clock-size) * .05);
+  border-radius:calc(var(--clock-size) * .03);
   transform-origin:50% 100%;
-  margin-left:calc(var(--clock-size) * -.04);
-  margin-top:calc(var(--clock-size) * -.42);
-  transition:transform .6s cubic-bezier(.65,0,.35,1);
+  margin-left:calc(var(--clock-size) * -.03);
+  margin-top:calc(var(--clock-size) * -.5);
+  transition:transform .6s cubic-bezier(.65,0,.35,1), opacity .6s ease;
 }
-.digit-gap{ margin-right:var(--digit-gap-extra); }
+/* Quadranti "spenti": nel prodotto vero appaiono vuoti, le lancette
+   a riposo non si vedono. */
+.hand.parked{ opacity:0; }
