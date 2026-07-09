@@ -34,7 +34,7 @@ const ClockGrid = (function () {
           const h2 = document.createElement('div'); h2.className = 'hand';
           clockDiv.appendChild(h1); clockDiv.appendChild(h2);
           container.appendChild(clockDiv);
-          clocks.push({ h1, h2, cum1: 225, cum2: 225 });
+          clocks.push({ h1, h2, cum1: 225, cum2: 45 });
         }
       }
       fitToViewport();
@@ -73,7 +73,7 @@ const ClockGrid = (function () {
       const [topRun, bottomRun] = distribute(extra, 2);
       const midRow = 1 + topRun;
       const bottomRow = H - 1;
-      const park = ClockFont.ROLES[0].park;
+      const [park1, park2] = ClockFont.PARK;
 
       for (let c = 0; c < width; c++) {
         const absC = colOffset + c;
@@ -92,17 +92,17 @@ const ClockGrid = (function () {
             else if (r === bottomRow) [a1, a2] = ClockFont.anglesForCell(digit, 4 + localCol);
             else if (r < midRow) {
               const active = segActiveFor(digit, topSegKey);
-              [a1, a2] = active ? [ClockFont.N, ClockFont.S] : [park, park];
+              [a1, a2] = active ? [ClockFont.N, ClockFont.S] : [park1, park2];
             } else {
               const active = segActiveFor(digit, bottomSegKey);
-              [a1, a2] = active ? [ClockFont.N, ClockFont.S] : [park, park];
+              [a1, a2] = active ? [ClockFont.N, ClockFont.S] : [park1, park2];
             }
           } else {
             let active = false;
             if (r === 0) active = segActiveFor(digit, 'A');
             else if (r === midRow) active = segActiveFor(digit, 'G');
             else if (r === bottomRow) active = segActiveFor(digit, 'D');
-            [a1, a2] = active ? [ClockFont.E, ClockFont.W] : [park, park];
+            [a1, a2] = active ? [ClockFont.E, ClockFont.W] : [park1, park2];
           }
           setCell(clk, a1, a2);
         }
@@ -110,10 +110,10 @@ const ClockGrid = (function () {
     }
 
     function parkColumnRange(fromCol, toCol) {
-      const park = ClockFont.ROLES[0].park;
+      const [park1, park2] = ClockFont.PARK;
       for (let r = 0; r < cfg.rows; r++) {
         for (let c = fromCol; c < toCol; c++) {
-          setCell(clocks[cellIndex(r, c)], park, park);
+          setCell(clocks[cellIndex(r, c)], park1, park2);
         }
       }
     }

@@ -15,30 +15,31 @@ const ClockFont = (function () {
     9: { A: 1, B: 1, C: 1, D: 1, E: 0, F: 1, G: 1 },
   };
 
-  // Angolo di riposo unico per i quadranti inattivi: entrambe le lancette
-  // sovrapposte sulle 7:30 (225°), la posizione di riposo del prodotto vero —
-  // una sola linea sottile in diagonale, visibile ma discreta. Deve restare
-  // diagonale (mai N/E/S/W) per non confondersi con un segmento attivo.
-  const PARK = 225;
+  // Riposo dei quadranti inattivi come nel prodotto vero: una lancetta a
+  // sud-ovest (225°) e una a nord-est (45°), che insieme disegnano una linea
+  // diagonale completa "/". Diagonale per non confondersi mai con i tratti
+  // delle cifre (solo N/E/S/W), uguale per tutti i quadranti per uno sfondo
+  // uniforme e calmo.
+  const PARK = [225, 45];
   const ROLES = [
-    { dirs: [[E, 'A'], [S, 'F']], park: PARK },
-    { dirs: [[W, 'A'], [S, 'B']], park: PARK },
-    { dirs: [[N, 'F'], [S, 'E'], [E, 'G']], park: PARK },
-    { dirs: [[N, 'B'], [S, 'C'], [W, 'G']], park: PARK },
-    { dirs: [[N, 'E'], [E, 'D']], park: PARK },
-    { dirs: [[N, 'C'], [W, 'D']], park: PARK },
+    { dirs: [[E, 'A'], [S, 'F']] },
+    { dirs: [[W, 'A'], [S, 'B']] },
+    { dirs: [[N, 'F'], [S, 'E'], [E, 'G']] },
+    { dirs: [[N, 'B'], [S, 'C'], [W, 'G']] },
+    { dirs: [[N, 'E'], [E, 'D']] },
+    { dirs: [[N, 'C'], [W, 'D']] },
   ];
 
   function anglesForCell(digit, roleIndex) {
     const role = ROLES[roleIndex];
     const seg = SEG[digit];
-    if (seg === undefined) return [role.park, role.park];
+    if (seg === undefined) return [PARK[0], PARK[1]];
     const active = role.dirs.filter(([dir, key]) => seg[key]).map(([dir]) => dir);
-    if (active.length === 0) return [role.park, role.park];
+    if (active.length === 0) return [PARK[0], PARK[1]];
     if (active.length === 1) return [active[0], active[0]];
     if (active.includes(N) && active.includes(S)) return [N, S];
     return [active[0], active[1]];
   }
 
-  return { N, E, S, W, SEG, ROLES, anglesForCell };
+  return { N, E, S, W, SEG, ROLES, PARK, anglesForCell };
 })();
