@@ -13,7 +13,9 @@ app.use(express.static(path.join(__dirname, 'public')));
 // il "comando" che il microcontrollore traduce in angoli dei servo.
 let state = {
   mode: 'live',      // 'live' | 'custom' | 'wave' | 'park'
-  customDigits: ''    // usato solo quando mode === 'custom'
+  customDigits: '',   // usato solo quando mode === 'custom'
+  rows: 3,            // dimensioni della griglia di orologi
+  cols: 8
 };
 
 app.get('/', (req, res) => res.redirect('/admin'));

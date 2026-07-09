@@ -3,31 +3,26 @@
 <head>
 <meta charset="UTF-8">
 <title>Clock-Clock Admin</title>
+<link rel="stylesheet" href="/style.css">
 <style>
-  :root{ --bg:#dcdcdc; --panel:#f4f4f4; --hand:#111; --face:#fff; }
-  *{box-sizing:border-box;}
   body{
-    margin:0; min-height:100vh; background:var(--bg);
+    min-height:100vh;
     display:flex; flex-direction:column; align-items:center; justify-content:center;
-    font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;
     padding:24px; gap:20px;
   }
-  h1{font-size:15px;font-weight:600;color:#444;margin:0;letter-spacing:.5px;}
-  .panel{background:var(--panel);padding:18px 22px;border-radius:16px;box-shadow:0 16px 32px rgba(0,0,0,.15);}
-  .grid{display:grid;grid-template-columns:repeat(8,1fr);grid-template-rows:repeat(3,1fr);gap:5px;}
-  .digit-gap{margin-right:12px;}
-  .clock{position:relative;width:38px;height:38px;border-radius:50%;background:var(--face);box-shadow:inset 0 2px 3px rgba(0,0,0,.15),0 2px 4px rgba(0,0,0,.15);}
-  .hand{position:absolute;left:50%;top:50%;width:3px;height:16px;background:var(--hand);border-radius:2px;transform-origin:50% 100%;margin-left:-1.5px;margin-top:-16px;transition:transform .5s cubic-bezier(.65,0,.35,1);}
-  .controls{display:flex;flex-direction:column;gap:12px;align-items:center;width:100%;max-width:460px;}
+  h1{font-size:15px;font-weight:600;color:var(--text);margin:0;letter-spacing:.5px;}
+  .panel{ max-width:94vw; overflow:auto; }
+  .controls{display:flex;flex-direction:column;gap:12px;align-items:center;width:100%;max-width:520px;}
   .row{display:flex;gap:8px;flex-wrap:wrap;justify-content:center;}
-  input[type=text]{font-size:18px;letter-spacing:4px;text-align:center;padding:8px 12px;border-radius:8px;border:1px solid #bbb;width:130px;}
+  input[type=text]{font-size:18px;letter-spacing:4px;text-align:center;padding:8px 12px;border-radius:8px;border:1px solid #bbb;width:160px;}
   button{font-size:13px;padding:9px 14px;border-radius:8px;border:1px solid #bbb;background:#fff;cursor:pointer;color:#333;}
   button:hover{background:#eee;}
   button.active{background:#111;color:#fff;border-color:#111;}
-  .status{font-size:12px;color:#777;}
+  .status{font-size:12px;color:var(--text-dim);}
   .status.ok{color:#2a8f4a;}
   .status.bad{color:#c0392b;}
   a.disp-link{font-size:12px;color:#555;}
+  .section-label{font-size:11px;color:var(--text-dim);letter-spacing:.5px;text-transform:uppercase;margin-top:4px;}
 </style>
 </head>
 <body>
@@ -44,103 +39,29 @@
     <button id="btnPark">Tutti chiusi</button>
   </div>
   <div class="row" id="customRow" style="display:none;">
-    <input type="text" id="digits" maxlength="4" placeholder="es. 2035">
+    <input type="text" id="digits" placeholder="es. 2035">
     <button id="applyDigits">Mostra</button>
   </div>
+
+  <div class="section-label">Dimensione griglia</div>
+  <div class="row" id="sizeRow"></div>
+
   <div class="status" id="conn">connessione...</div>
   <a class="disp-link" href="/display" target="_blank">apri pagina display in una nuova scheda →</a>
 </div>
 
 <script src="/socket.io/socket.io.js"></script>
 <script src="/clock-font.js"></script>
+<script src="/clock-grid.js"></script>
 <script>
-const gridEl = document.getElementById('grid');
-const clocks = [];
+const GRID_PRESETS = [
+  { key:'8x3',  rows:3, cols:8,  label:'8×3 · standard (4 cifre)' },
+  { key:'12x3', rows:3, cols:12, label:'12×3 · largo (6 cifre)' },
+  { key:'16x3', rows:3, cols:16, label:'16×3 · extra largo (8 cifre)' },
+  { key:'12x6', rows:6, cols:12, label:'12×6 · doppia fila (12 cifre)' },
+];
 
-for(let r=0;r<3;r++){
-  for(let c=0;c<8;c++){
-    const clockDiv=document.createElement('div');
-    clockDiv.className='clock';
-    if(c===1||c===3||c===5) clockDiv.classList.add('digit-gap');
-    const h1=document.createElement('div'); h1.className='hand';
-    const h2=document.createElement('div'); h2.className='hand';
-    clockDiv.appendChild(h1); clockDiv.appendChild(h2);
-    gridEl.appendChild(clockDiv);
-    clocks.push({h1,h2,cum1:135,cum2:135});
-  }
-}
-
-function cellIndex(r,c){ return r*8+c; }
-function setHandTarget(hand,cumProp,obj,targetDeg){
-  let current=obj[cumProp];
-  let currentMod=((current%360)+360)%360;
-  let delta=targetDeg-currentMod;
-  if(delta>180) delta-=360;
-  if(delta<-180) delta+=360;
-  obj[cumProp]=current+delta;
-  hand.style.transform=`rotate(${obj[cumProp]}deg)`;
-}
-function showDigit(digit,digitIndex){
-  for(let localRole=0;localRole<6;localRole++){
-    const r=Math.floor(localRole/2), localCol=localRole%2;
-    const c=digitIndex*2+localCol;
-    const idx=cellIndex(r,c);
-    const [a1,a2]=ClockFont.anglesForCell(digit,localRole);
-    const clk=clocks[idx];
-    setHandTarget(clk.h1,'cum1',clk,a1);
-    setHandTarget(clk.h2,'cum2',clk,a2);
-  }
-}
-function showNumber(str){
-  const chars=String(str).padStart(4,' ').slice(-4).split('');
-  chars.forEach((ch,i)=>{
-    const d=/[0-9]/.test(ch)?parseInt(ch,10):undefined;
-    showDigit(d,i);
-  });
-}
-function parkAll(){
-  for(let r=0;r<3;r++) for(let c=0;c<8;c++){
-    const localRole=r*2+(c%2);
-    const park=ClockFont.ROLES[localRole].park;
-    const idx=cellIndex(r,c);
-    const clk=clocks[idx];
-    setHandTarget(clk.h1,'cum1',clk,park);
-    setHandTarget(clk.h2,'cum2',clk,park);
-  }
-}
-function showWave(){
-  clocks.forEach((clk,idx)=>{
-    const phase=(idx*24)%360;
-    setHandTarget(clk.h1,'cum1',clk,phase);
-    setHandTarget(clk.h2,'cum2',clk,(phase+180)%360);
-  });
-}
-let liveTimer=null;
-function startLive(){ stopLive(); tickLive(); liveTimer=setInterval(tickLive,1000); }
-function stopLive(){ if(liveTimer){clearInterval(liveTimer);liveTimer=null;} }
-function tickLive(){
-  const now=new Date();
-  const hh=String(now.getHours()).padStart(2,'0');
-  const mm=String(now.getMinutes()).padStart(2,'0');
-  showNumber(hh+mm);
-}
-
-// --- socket: l'admin e' sia mittente dei comandi sia "spettatore" dello stato ufficiale ---
-const socket = io();
-const connEl = document.getElementById('conn');
-socket.on('connect', ()=>{ connEl.textContent='connesso al server'; connEl.className='status ok'; });
-socket.on('disconnect', ()=>{ connEl.textContent='disconnesso — riconnessione...'; connEl.className='status bad'; });
-
-socket.on('state', (state)=>{
-  setActiveByMode(state.mode);
-  if(state.mode==='live') startLive();
-  else{
-    stopLive();
-    if(state.mode==='custom') showNumber(state.customDigits||'');
-    else if(state.mode==='wave') showWave();
-    else if(state.mode==='park') parkAll();
-  }
-});
+const grid = ClockGrid.create(document.getElementById('grid'), { rows: 3, cols: 8 });
 
 const btnLive=document.getElementById('btnLive');
 const btnCustom=document.getElementById('btnCustom');
@@ -149,12 +70,39 @@ const btnPark=document.getElementById('btnPark');
 const customRow=document.getElementById('customRow');
 const digitsInput=document.getElementById('digits');
 const applyDigits=document.getElementById('applyDigits');
+const sizeRow=document.getElementById('sizeRow');
+
+const sizeButtons = {};
+GRID_PRESETS.forEach(preset=>{
+  const b=document.createElement('button');
+  b.textContent=preset.label;
+  b.addEventListener('click', ()=> socket.emit('setState', { rows: preset.rows, cols: preset.cols }));
+  sizeRow.appendChild(b);
+  sizeButtons[preset.key]=b;
+});
 
 function setActiveByMode(mode){
   [btnLive,btnCustom,btnWave,btnPark].forEach(b=>b.classList.remove('active'));
   ({live:btnLive,custom:btnCustom,wave:btnWave,park:btnPark})[mode]?.classList.add('active');
   customRow.style.display = mode==='custom' ? 'flex' : 'none';
 }
+function setActiveBySize(rows,cols){
+  Object.values(sizeButtons).forEach(b=>b.classList.remove('active'));
+  const preset=GRID_PRESETS.find(p=>p.rows===rows && p.cols===cols);
+  if(preset) sizeButtons[preset.key].classList.add('active');
+}
+
+const socket = io();
+const connEl = document.getElementById('conn');
+socket.on('connect', ()=>{ connEl.textContent='connesso al server'; connEl.className='status ok'; });
+socket.on('disconnect', ()=>{ connEl.textContent='disconnesso — riconnessione...'; connEl.className='status bad'; });
+
+socket.on('state', (state)=>{
+  grid.applyState(state);
+  setActiveByMode(state.mode);
+  setActiveBySize(state.rows||3, state.cols||8);
+  digitsInput.maxLength = grid.digitCount();
+});
 
 btnLive.addEventListener('click', ()=> socket.emit('setState', {mode:'live'}));
 btnWave.addEventListener('click', ()=> socket.emit('setState', {mode:'wave'}));
