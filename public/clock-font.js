@@ -72,13 +72,17 @@ const ClockFont = (function () {
       [[E,S],[N,W],[N,S]],
       [[N,E],[E,W],[N,W]],
     ],
+    // 4: gamba discendente diagonale vera (non verticale) con punta libera
+    // in alto, come nel bozzetto del proprietario: il tratto scende da
+    // destra verso sinistra fino alla traversa, poi un gambo corto separato
+    // (col1) chiude con lo stesso piedino della barra destra (col2).
     4: [
-      [[S,S],null, [S,S]],
-      [[N,S],null, [N,S]],
-      [[N,S],null, [N,S]],
-      [[N,E],[E,W],[N,S]],
-      [null, null, [N,S]],
-      [null, null, [N,N]],
+      [null,    null,     [W,S]],
+      [null,    [NE,SW],  [N,S]],
+      [[NE,S],  null,     [N,S]],
+      [[N,E],   [W,S],    [N,S]],
+      [null,    [N,S],    [N,S]],
+      [null,    [N,E],    [N,W]],
     ],
     5: [
       [[E,S],[E,W],[W,S]],
