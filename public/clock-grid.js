@@ -57,42 +57,48 @@ const ClockGrid = (function () {
     }
 
     // Disegna una cifra su un blocco di `width` colonne che usa TUTTE le righe
-    // della griglia. L'angolo in alto (ruoli 0/1), la giunzione centrale
-    // (ruoli 2/3) e l'angolo in basso (ruoli 4/5) restano righe singole
-    // identiche al font originale; le righe in eccesso vengono inserite
-    // come tratti verticali dritti (una vera linea continua N-S) tra un
-    // angolo e l'altro, cosi' i segmenti si allungano invece di spezzarsi.
+    // della griglia. La colonna sinistra e quella destra portano i verticali
+    // (F/B sopra la giunzione, E/C sotto) con angolo in alto/giunzione/angolo
+    // in basso identici al font originale a 2 colonne; le righe in eccesso
+    // diventano tratti dritti N-S cosi' i segmenti si allungano invece di
+    // spezzarsi. Le colonne centrali (quando la cifra e' piu' larga di 2)
+    // portano solo le tre barre orizzontali A/G/D, a riposo altrove.
     function renderDigitBlock(digit, colOffset, width) {
       const H = cfg.rows;
-      const colBoundary = distribute(width, 2)[0];
       const extra = Math.max(0, H - 3);
       const [topRun, bottomRun] = distribute(extra, 2);
       const midRow = 1 + topRun;
       const bottomRow = H - 1;
+      const park = ClockFont.ROLES[0].park;
 
       for (let c = 0; c < width; c++) {
-        const localCol = c < colBoundary ? 0 : 1;
         const absC = colOffset + c;
-        const topSegKey = localCol === 0 ? 'F' : 'B';
-        const bottomSegKey = localCol === 0 ? 'E' : 'C';
-        const stretchPark = ClockFont.ROLES[2 + localCol].park;
+        const isEdge = c === 0 || c === width - 1;
 
         for (let r = 0; r < H; r++) {
           const clk = clocks[cellIndex(r, absC)];
           if (!clk) continue;
           let a1, a2;
-          if (r === 0) {
-            [a1, a2] = ClockFont.anglesForCell(digit, localCol);
-          } else if (r === midRow) {
-            [a1, a2] = ClockFont.anglesForCell(digit, 2 + localCol);
-          } else if (r === bottomRow) {
-            [a1, a2] = ClockFont.anglesForCell(digit, 4 + localCol);
-          } else if (r < midRow) {
-            const active = segActiveFor(digit, topSegKey);
-            [a1, a2] = active ? [ClockFont.N, ClockFont.S] : [stretchPark, stretchPark];
+          if (isEdge) {
+            const localCol = c === 0 ? 0 : 1;
+            const topSegKey = localCol === 0 ? 'F' : 'B';
+            const bottomSegKey = localCol === 0 ? 'E' : 'C';
+            if (r === 0) [a1, a2] = ClockFont.anglesForCell(digit, localCol);
+            else if (r === midRow) [a1, a2] = ClockFont.anglesForCell(digit, 2 + localCol);
+            else if (r === bottomRow) [a1, a2] = ClockFont.anglesForCell(digit, 4 + localCol);
+            else if (r < midRow) {
+              const active = segActiveFor(digit, topSegKey);
+              [a1, a2] = active ? [ClockFont.N, ClockFont.S] : [park, park];
+            } else {
+              const active = segActiveFor(digit, bottomSegKey);
+              [a1, a2] = active ? [ClockFont.N, ClockFont.S] : [park, park];
+            }
           } else {
-            const active = segActiveFor(digit, bottomSegKey);
-            [a1, a2] = active ? [ClockFont.N, ClockFont.S] : [stretchPark, stretchPark];
+            let active = false;
+            if (r === 0) active = segActiveFor(digit, 'A');
+            else if (r === midRow) active = segActiveFor(digit, 'G');
+            else if (r === bottomRow) active = segActiveFor(digit, 'D');
+            [a1, a2] = active ? [ClockFont.E, ClockFont.W] : [park, park];
           }
           setHandTarget(clk.h1, 'cum1', clk, a1);
           setHandTarget(clk.h2, 'cum2', clk, a2);
@@ -111,25 +117,26 @@ const ClockGrid = (function () {
       }
     }
 
-    // La larghezza di una cifra resta SEMPRE 2 colonne (l'unita' minima del
-    // font a 7 segmenti: allargarla distorce la forma). Ogni cifra usa pero'
-    // tutta l'altezza della griglia, e lo spazio orizzontale in eccesso viene
-    // distribuito come spaziatura prima/tra/dopo le cifre invece di stirarle.
-    const DIGIT_W = 2;
+    // La larghezza di una cifra si adatta a colonne/cifre (min. 2, l'unita'
+    // minima del font a 7 segmenti): su una griglia piu' larga le cifre
+    // diventano piu' larghe invece di lasciare colonne vuote, e lo spazio
+    // che eventualmente avanza viene distribuito come spaziatura prima/tra/
+    // dopo le cifre.
     function showNumber(str) {
       const s = String(str);
-      const maxDigits = Math.max(1, Math.floor(cfg.cols / DIGIT_W));
+      const maxDigits = Math.max(1, Math.floor(cfg.cols / 2));
       const n = Math.max(1, Math.min(s.length, maxDigits));
+      const digitW = Math.max(2, Math.floor(cfg.cols / n));
       const chars = s.slice(-n).padStart(n, ' ').split('');
-      const leftover = cfg.cols - n * DIGIT_W;
+      const leftover = cfg.cols - n * digitW;
       const gaps = distribute(leftover, n + 1);
 
       parkAll();
       let col = gaps[0];
       chars.forEach((ch, i) => {
         const d = /[0-9]/.test(ch) ? parseInt(ch, 10) : undefined;
-        renderDigitBlock(d, col, DIGIT_W);
-        col += DIGIT_W + gaps[i + 1];
+        renderDigitBlock(d, col, digitW);
+        col += digitW + gaps[i + 1];
       });
     }
 
