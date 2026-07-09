@@ -30,11 +30,11 @@ const ClockGrid = (function () {
         for (let c = 0; c < cfg.cols; c++) {
           const clockDiv = document.createElement('div');
           clockDiv.className = 'clock';
-          const h1 = document.createElement('div'); h1.className = 'hand parked';
-          const h2 = document.createElement('div'); h2.className = 'hand parked';
+          const h1 = document.createElement('div'); h1.className = 'hand';
+          const h2 = document.createElement('div'); h2.className = 'hand';
           clockDiv.appendChild(h1); clockDiv.appendChild(h2);
           container.appendChild(clockDiv);
-          clocks.push({ h1, h2, cum1: 135, cum2: 135 });
+          clocks.push({ h1, h2, cum1: 225, cum2: 225 });
         }
       }
       fitToViewport();
@@ -50,14 +50,9 @@ const ClockGrid = (function () {
       hand.style.transform = `rotate(${obj[cumProp]}deg)`;
     }
 
-    // Imposta entrambe le lancette di un quadrante; `lit` false = quadrante
-    // spento, le lancette raggiungono comunque l'angolo di riposo ma svaniscono
-    // (nel prodotto vero i quadranti inattivi appaiono vuoti).
-    function setCell(clk, a1, a2, lit) {
+    function setCell(clk, a1, a2) {
       setHandTarget(clk.h1, 'cum1', clk, a1);
       setHandTarget(clk.h2, 'cum2', clk, a2);
-      clk.h1.classList.toggle('parked', !lit);
-      clk.h2.classList.toggle('parked', !lit);
     }
 
     function segActiveFor(digit, key) {
@@ -109,9 +104,7 @@ const ClockGrid = (function () {
             else if (r === bottomRow) active = segActiveFor(digit, 'D');
             [a1, a2] = active ? [ClockFont.E, ClockFont.W] : [park, park];
           }
-          // il riposo (135) non coincide mai con un tratto reale (N/E/S/W),
-          // quindi identifica con certezza un quadrante spento
-          setCell(clk, a1, a2, !(a1 === park && a2 === park));
+          setCell(clk, a1, a2);
         }
       }
     }
@@ -120,7 +113,7 @@ const ClockGrid = (function () {
       const park = ClockFont.ROLES[0].park;
       for (let r = 0; r < cfg.rows; r++) {
         for (let c = fromCol; c < toCol; c++) {
-          setCell(clocks[cellIndex(r, c)], park, park, false);
+          setCell(clocks[cellIndex(r, c)], park, park);
         }
       }
     }
@@ -165,7 +158,7 @@ const ClockGrid = (function () {
         clocks.forEach((clk, idx) => {
           const r = Math.floor(idx / cfg.cols), c = idx % cfg.cols;
           const phase = (t + c * 20 - r * 14) % 360;
-          setCell(clk, phase, phase + 180, true);
+          setCell(clk, phase, phase + 180);
         });
       }, 90);
     }
@@ -176,7 +169,7 @@ const ClockGrid = (function () {
       runAnimation(() => {
         const t = animTick * 8;
         clocks.forEach((clk) => {
-          setCell(clk, t % 360, (t + 180) % 360, true);
+          setCell(clk, t % 360, (t + 180) % 360);
         });
       }, 90);
     }
@@ -190,7 +183,7 @@ const ClockGrid = (function () {
           const r = Math.floor(idx / cfg.cols), c = idx % cfg.cols;
           const dist = Math.hypot(c - cx, r - cy);
           const phase = (t - dist * 26) % 360;
-          setCell(clk, phase, phase + 180, true);
+          setCell(clk, phase, phase + 180);
         });
       }, 90);
     }

@@ -15,12 +15,11 @@ const ClockFont = (function () {
     9: { A: 1, B: 1, C: 1, D: 1, E: 0, F: 1, G: 1 },
   };
 
-  // Angolo di riposo unico e DIAGONALE per i quadranti spenti: deve restare
-  // diverso da N/E/S/W, altrimenti si confonderebbe con un segmento attivo
-  // che punta nella stessa direzione (es. l'angolo del "6" verso sud). Un
-  // solo valore per tutti i ruoli evita anche il disegno a losanghe che si
-  // otteneva mescolando i 4 park diagonali diversi di prima.
-  const PARK = 135;
+  // Angolo di riposo unico per i quadranti inattivi: entrambe le lancette
+  // sovrapposte sulle 7:30 (225°), la posizione di riposo del prodotto vero —
+  // una sola linea sottile in diagonale, visibile ma discreta. Deve restare
+  // diagonale (mai N/E/S/W) per non confondersi con un segmento attivo.
+  const PARK = 225;
   const ROLES = [
     { dirs: [[E, 'A'], [S, 'F']], park: PARK },
     { dirs: [[W, 'A'], [S, 'B']], park: PARK },
