@@ -30,6 +30,98 @@ const ClockFont = (function () {
     { dirs: [[N, 'C'], [W, 'D']] },
   ];
 
+  // ---------------------------------------------------------------------
+  // Glifi esatti 3 colonne x 6 righe, trascritti cella per cella dalle foto
+  // del prodotto vero (0,1,3,5,8,9 forniti dal proprietario; 2 = specchio
+  // del 5, 6 = rotazione del 9, 4 e 7 disegnati nello stesso linguaggio).
+  // Ogni cifra e' il CONTORNO CHIUSO della cifra "spessa": le barre interne
+  // rappresentano i fori (0/8/9), l'8 usa le diagonali per la strozzatura.
+  // null = quadrante a riposo. Usati quando il riquadro cifra e' 3x6.
+  // ---------------------------------------------------------------------
+  const NE = 45, SE = 135, SW = 225, NW = 315;
+  const GLYPHS_3x6 = {
+    0: [
+      [[E,S],[E,W],[W,S]],
+      [[N,S],[S,S],[N,S]],
+      [[N,S],[N,S],[N,S]],
+      [[N,S],[N,S],[N,S]],
+      [[N,S],[N,N],[N,S]],
+      [[N,E],[E,W],[N,W]],
+    ],
+    1: [
+      [[E,S],[E,W],[W,S]],
+      [[N,E],[W,S],[N,S]],
+      [null, [N,S],[N,S]],
+      [null, [N,S],[N,S]],
+      [null, [N,S],[N,S]],
+      [null, [N,E],[N,W]],
+    ],
+    2: [
+      [[E,S],[E,W],[W,S]],
+      [[N,E],[W,S],[N,S]],
+      [[E,S],[N,W],[N,S]],
+      [[N,S],[E,S],[N,W]],
+      [[N,S],[N,E],[W,S]],
+      [[N,E],[E,W],[N,W]],
+    ],
+    3: [
+      [[E,S],[E,W],[W,S]],
+      [[N,E],[W,S],[N,S]],
+      [[E,S],[N,W],[N,S]],
+      [[N,E],[W,S],[N,S]],
+      [[E,S],[N,W],[N,S]],
+      [[N,E],[E,W],[N,W]],
+    ],
+    4: [
+      [[S,S],null, [S,S]],
+      [[N,S],null, [N,S]],
+      [[N,S],null, [N,S]],
+      [[N,E],[E,W],[N,S]],
+      [null, null, [N,S]],
+      [null, null, [N,N]],
+    ],
+    5: [
+      [[E,S],[E,W],[W,S]],
+      [[N,S],[E,S],[N,W]],
+      [[N,S],[N,E],[W,S]],
+      [[N,E],[W,S],[N,S]],
+      [[E,S],[N,W],[N,S]],
+      [[N,E],[E,W],[N,W]],
+    ],
+    6: [
+      [[E,S],[E,W],[W,S]],
+      [[N,S],[E,S],[N,W]],
+      [[N,S],[N,E],[W,S]],
+      [[N,S],[S,S],[N,S]],
+      [[N,S],[N,N],[N,S]],
+      [[N,E],[E,W],[N,W]],
+    ],
+    7: [
+      [[E,E],[E,W],[W,S]],
+      [null, [E,S],[N,W]],
+      [null, [N,S],null ],
+      [null, [N,S],null ],
+      [null, [N,S],null ],
+      [null, [N,N],null ],
+    ],
+    8: [
+      [[E,S],[E,W],[W,S]],
+      [[N,S],[S,S],[N,S]],
+      [[N,SE],[N,N],[N,SW]],
+      [[S,NE],[S,S],[S,NW]],
+      [[N,S],[N,N],[N,S]],
+      [[N,E],[E,W],[N,W]],
+    ],
+    9: [
+      [[E,S],[E,W],[W,S]],
+      [[N,S],[S,S],[N,S]],
+      [[N,S],[N,N],[N,S]],
+      [[N,E],[W,S],[N,S]],
+      [[E,S],[N,W],[N,S]],
+      [[N,E],[E,W],[N,W]],
+    ],
+  };
+
   function anglesForCell(digit, roleIndex) {
     const role = ROLES[roleIndex];
     const seg = SEG[digit];
@@ -41,5 +133,5 @@ const ClockFont = (function () {
     return [active[0], active[1]];
   }
 
-  return { N, E, S, W, SEG, ROLES, PARK, anglesForCell };
+  return { N, E, S, W, SEG, ROLES, PARK, GLYPHS_3x6, anglesForCell };
 })();

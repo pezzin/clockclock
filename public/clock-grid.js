@@ -69,6 +69,23 @@ const ClockGrid = (function () {
     // portano solo le tre barre orizzontali A/G/D, a riposo altrove.
     function renderDigitBlock(digit, colOffset, width) {
       const H = cfg.rows;
+
+      // Riquadro 3x6: usa i glifi esatti trascritti dalle foto del prodotto.
+      const glyph = ClockFont.GLYPHS_3x6[digit];
+      if (width === 3 && H === 6 && glyph) {
+        const [p1, p2] = ClockFont.PARK;
+        for (let r = 0; r < 6; r++) {
+          for (let c = 0; c < 3; c++) {
+            const clk = clocks[cellIndex(r, colOffset + c)];
+            if (!clk) continue;
+            const cell = glyph[r][c];
+            if (cell) setCell(clk, cell[0], cell[1]);
+            else setCell(clk, p1, p2);
+          }
+        }
+        return;
+      }
+
       const extra = Math.max(0, H - 3);
       const [topRun, bottomRun] = distribute(extra, 2);
       const midRow = 1 + topRun;
