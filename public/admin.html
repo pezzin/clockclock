@@ -35,8 +35,12 @@
   <div class="row">
     <button id="btnLive">Ora attuale</button>
     <button id="btnCustom">Numero personalizzato</button>
-    <button id="btnWave">Forma: onda</button>
     <button id="btnPark">Tutti chiusi</button>
+  </div>
+  <div class="row">
+    <button id="btnWave">Onda</button>
+    <button id="btnPinwheel">Girandola</button>
+    <button id="btnRipple">Increspatura</button>
   </div>
   <div class="row" id="customRow" style="display:none;">
     <input type="text" id="digits" placeholder="es. 2035">
@@ -55,10 +59,10 @@
 <script src="/clock-grid.js"></script>
 <script>
 const GRID_PRESETS = [
-  { key:'8x3',  rows:3, cols:8,  label:'8×3 · standard (4 cifre)' },
-  { key:'12x3', rows:3, cols:12, label:'12×3 · largo (6 cifre)' },
-  { key:'16x3', rows:3, cols:16, label:'16×3 · extra largo (8 cifre)' },
-  { key:'12x6', rows:6, cols:12, label:'12×6 · doppia fila (12 cifre)' },
+  { key:'8x3',  rows:3, cols:8,  label:'8×3 · standard (24 orologi)' },
+  { key:'12x3', rows:3, cols:12, label:'12×3 · largo (36 orologi)' },
+  { key:'16x3', rows:3, cols:16, label:'16×3 · extra largo (48 orologi)' },
+  { key:'12x6', rows:6, cols:12, label:'12×6 · grande (72 orologi)' },
 ];
 
 const grid = ClockGrid.create(document.getElementById('grid'), { rows: 3, cols: 8 });
@@ -66,6 +70,8 @@ const grid = ClockGrid.create(document.getElementById('grid'), { rows: 3, cols: 
 const btnLive=document.getElementById('btnLive');
 const btnCustom=document.getElementById('btnCustom');
 const btnWave=document.getElementById('btnWave');
+const btnPinwheel=document.getElementById('btnPinwheel');
+const btnRipple=document.getElementById('btnRipple');
 const btnPark=document.getElementById('btnPark');
 const customRow=document.getElementById('customRow');
 const digitsInput=document.getElementById('digits');
@@ -82,8 +88,8 @@ GRID_PRESETS.forEach(preset=>{
 });
 
 function setActiveByMode(mode){
-  [btnLive,btnCustom,btnWave,btnPark].forEach(b=>b.classList.remove('active'));
-  ({live:btnLive,custom:btnCustom,wave:btnWave,park:btnPark})[mode]?.classList.add('active');
+  [btnLive,btnCustom,btnWave,btnPinwheel,btnRipple,btnPark].forEach(b=>b.classList.remove('active'));
+  ({live:btnLive,custom:btnCustom,wave:btnWave,pinwheel:btnPinwheel,ripple:btnRipple,park:btnPark})[mode]?.classList.add('active');
   customRow.style.display = mode==='custom' ? 'flex' : 'none';
 }
 function setActiveBySize(rows,cols){
@@ -101,11 +107,12 @@ socket.on('state', (state)=>{
   grid.applyState(state);
   setActiveByMode(state.mode);
   setActiveBySize(state.rows||3, state.cols||8);
-  digitsInput.maxLength = grid.digitCount();
 });
 
 btnLive.addEventListener('click', ()=> socket.emit('setState', {mode:'live'}));
 btnWave.addEventListener('click', ()=> socket.emit('setState', {mode:'wave'}));
+btnPinwheel.addEventListener('click', ()=> socket.emit('setState', {mode:'pinwheel'}));
+btnRipple.addEventListener('click', ()=> socket.emit('setState', {mode:'ripple'}));
 btnPark.addEventListener('click', ()=> socket.emit('setState', {mode:'park'}));
 btnCustom.addEventListener('click', ()=>{
   setActiveByMode('custom');

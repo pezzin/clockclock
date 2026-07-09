@@ -1,20 +1,26 @@
 // Logica di griglia condivisa tra admin e display: costruzione dei quadranti,
-// mappatura cifre->orologi e gestione degli stati (live/custom/wave/park).
-// Ogni cifra occupa un blocco di 2 colonne x 3 righe (vedi clock-font.js).
+// disegno delle cifre (font a 7 segmenti "scalato" su tutta la griglia) e
+// gestione degli stati/animazioni (live, custom, park, wave, pinwheel, ripple).
 const ClockGrid = (function () {
-  function digitCount(cfg) {
-    return Math.floor(cfg.cols / 2) * Math.floor(cfg.rows / 3);
+  // Divide `total` in `parts` interi il piu' possibile uguali (i primi ricevono il resto).
+  function distribute(total, parts) {
+    const base = Math.floor(total / parts);
+    let rem = total - base * parts;
+    const sizes = new Array(parts).fill(base);
+    for (let i = 0; i < rem; i++) sizes[i] += 1;
+    return sizes;
   }
 
   function create(container, initialCfg) {
     let clocks = [];
     let cfg = null;
-    let liveTimer = null;
+    let animTimer = null;
+    let animTick = 0;
 
     function cellIndex(r, c) { return r * cfg.cols + c; }
 
     function build(newCfg) {
-      stopLive();
+      stopAnimation();
       cfg = { rows: newCfg.rows, cols: newCfg.cols };
       container.innerHTML = '';
       container.style.gridTemplateColumns = `repeat(${cfg.cols}, var(--clock-size))`;
@@ -45,33 +51,32 @@ const ClockGrid = (function () {
       hand.style.transform = `rotate(${obj[cumProp]}deg)`;
     }
 
-    function showDigit(digit, digitIndex) {
-      const digitsPerBand = Math.floor(cfg.cols / 2);
-      const band = Math.floor(digitIndex / digitsPerBand);
-      const colInBand = digitIndex % digitsPerBand;
-      for (let localRole = 0; localRole < 6; localRole++) {
-        const r = band * 3 + Math.floor(localRole / 2);
-        const c = colInBand * 2 + (localRole % 2);
-        const clk = clocks[cellIndex(r, c)];
-        if (!clk) continue;
-        const [a1, a2] = ClockFont.anglesForCell(digit, localRole);
-        setHandTarget(clk.h1, 'cum1', clk, a1);
-        setHandTarget(clk.h2, 'cum2', clk, a2);
+    // Disegna una cifra su un blocco di `width` colonne che usa TUTTE le righe
+    // della griglia: i 6 ruoli del font vengono "spalmati" su sotto-blocchi
+    // proporzionali, cosi' la cifra si ingrandisce riempiendo lo spazio dato.
+    function renderDigitBlock(digit, colOffset, width) {
+      const colSizes = distribute(width, 2);
+      const rowSizes = distribute(cfg.rows, 3);
+      const colBoundary = colSizes[0];
+      const rowBoundary1 = rowSizes[0];
+      const rowBoundary2 = rowBoundary1 + rowSizes[1];
+      for (let r = 0; r < cfg.rows; r++) {
+        const band = r < rowBoundary1 ? 0 : (r < rowBoundary2 ? 1 : 2);
+        for (let c = 0; c < width; c++) {
+          const localCol = c < colBoundary ? 0 : 1;
+          const localRole = band * 2 + localCol;
+          const clk = clocks[cellIndex(r, colOffset + c)];
+          if (!clk) continue;
+          const [a1, a2] = ClockFont.anglesForCell(digit, localRole);
+          setHandTarget(clk.h1, 'cum1', clk, a1);
+          setHandTarget(clk.h2, 'cum2', clk, a2);
+        }
       }
     }
 
-    function showNumber(str) {
-      const n = digitCount(cfg);
-      const chars = String(str).padStart(n, ' ').slice(-n).split('');
-      chars.forEach((ch, i) => {
-        const d = /[0-9]/.test(ch) ? parseInt(ch, 10) : undefined;
-        showDigit(d, i);
-      });
-    }
-
-    function parkAll() {
+    function parkColumnRange(fromCol, toCol) {
       for (let r = 0; r < cfg.rows; r++) {
-        for (let c = 0; c < cfg.cols; c++) {
+        for (let c = fromCol; c < toCol; c++) {
           const localRole = (r % 3) * 2 + (c % 2);
           const park = ClockFont.ROLES[localRole].park;
           const clk = clocks[cellIndex(r, c)];
@@ -81,38 +86,95 @@ const ClockGrid = (function () {
       }
     }
 
-    function showWave() {
-      clocks.forEach((clk, idx) => {
-        const phase = (idx * 24) % 360;
-        setHandTarget(clk.h1, 'cum1', clk, phase);
-        setHandTarget(clk.h2, 'cum2', clk, (phase + 180) % 360);
+    // Ogni cifra occupa tutta l'altezza della griglia; la larghezza per cifra
+    // e' ricalcolata in base a quante cifre servono, cosi' un solo numero puo'
+    // riempire l'intero pannello invece di restare confinato in un angolo.
+    function showNumber(str) {
+      const s = String(str);
+      const n = Math.max(1, Math.min(s.length, cfg.cols));
+      const digitW = Math.max(1, Math.floor(cfg.cols / n));
+      const totalUsed = digitW * n;
+      const leftMargin = Math.floor((cfg.cols - totalUsed) / 2);
+      const chars = s.slice(-n).padStart(n, ' ').split('');
+
+      parkColumnRange(0, leftMargin);
+      parkColumnRange(leftMargin + totalUsed, cfg.cols);
+      chars.forEach((ch, i) => {
+        const d = /[0-9]/.test(ch) ? parseInt(ch, 10) : undefined;
+        renderDigitBlock(d, leftMargin + i * digitW, digitW);
       });
     }
 
-    function startLive() {
-      stopLive();
-      tickLive();
-      liveTimer = setInterval(tickLive, 1000);
+    function parkAll() { parkColumnRange(0, cfg.cols); }
+
+    function stopAnimation() { if (animTimer) { clearInterval(animTimer); animTimer = null; } }
+    function runAnimation(tickFn, intervalMs) {
+      stopAnimation();
+      animTick = 0;
+      tickFn();
+      animTimer = setInterval(() => { animTick++; tickFn(); }, intervalMs);
     }
-    function stopLive() { if (liveTimer) { clearInterval(liveTimer); liveTimer = null; } }
-    function tickLive() {
-      const now = new Date();
-      const hh = String(now.getHours()).padStart(2, '0');
-      const mm = String(now.getMinutes()).padStart(2, '0');
-      showNumber(hh + mm);
+
+    // Onda: una linea diagonale che scorre continuamente sulla griglia.
+    function startWave() {
+      runAnimation(() => {
+        const t = animTick * 7;
+        clocks.forEach((clk, idx) => {
+          const r = Math.floor(idx / cfg.cols), c = idx % cfg.cols;
+          const phase = (t + c * 20 - r * 14) % 360;
+          setHandTarget(clk.h1, 'cum1', clk, phase);
+          setHandTarget(clk.h2, 'cum2', clk, phase + 180);
+        });
+      }, 90);
+    }
+
+    // Girandola: tutte le lancette ruotano insieme in senso orario, come
+    // ventole sincronizzate (ispirato al "fun mode" dei replica-project).
+    function startPinwheel() {
+      runAnimation(() => {
+        const t = animTick * 8;
+        clocks.forEach((clk) => {
+          setHandTarget(clk.h1, 'cum1', clk, t % 360);
+          setHandTarget(clk.h2, 'cum2', clk, (t + 180) % 360);
+        });
+      }, 90);
+    }
+
+    // Increspatura: un'onda radiale che si propaga dal centro verso i bordi.
+    function startRipple() {
+      runAnimation(() => {
+        const t = animTick * 10;
+        const cx = (cfg.cols - 1) / 2, cy = (cfg.rows - 1) / 2;
+        clocks.forEach((clk, idx) => {
+          const r = Math.floor(idx / cfg.cols), c = idx % cfg.cols;
+          const dist = Math.hypot(c - cx, r - cy);
+          const phase = (t - dist * 26) % 360;
+          setHandTarget(clk.h1, 'cum1', clk, phase);
+          setHandTarget(clk.h2, 'cum2', clk, phase + 180);
+        });
+      }, 90);
+    }
+
+    function startLive() {
+      runAnimation(() => {
+        const now = new Date();
+        const hh = String(now.getHours()).padStart(2, '0');
+        const mm = String(now.getMinutes()).padStart(2, '0');
+        showNumber(hh + mm);
+      }, 1000);
     }
 
     function applyState(state) {
       if (!cfg || state.rows !== cfg.rows || state.cols !== cfg.cols) {
         build({ rows: state.rows || 3, cols: state.cols || 8 });
       }
+      stopAnimation();
       if (state.mode === 'live') startLive();
-      else {
-        stopLive();
-        if (state.mode === 'custom') showNumber(state.customDigits || '');
-        else if (state.mode === 'wave') showWave();
-        else if (state.mode === 'park') parkAll();
-      }
+      else if (state.mode === 'wave') startWave();
+      else if (state.mode === 'pinwheel') startPinwheel();
+      else if (state.mode === 'ripple') startRipple();
+      else if (state.mode === 'custom') showNumber(state.customDigits || '');
+      else if (state.mode === 'park') parkAll();
     }
 
     function fitToViewport() {
@@ -129,11 +191,8 @@ const ClockGrid = (function () {
 
     build(initialCfg);
 
-    return {
-      build, showNumber, parkAll, showWave, startLive, stopLive, applyState, fitToViewport,
-      digitCount: () => digitCount(cfg),
-    };
+    return { build, showNumber, parkAll, applyState, fitToViewport };
   }
 
-  return { create, digitCount };
+  return { create };
 })();
