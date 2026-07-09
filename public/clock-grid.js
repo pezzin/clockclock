@@ -86,22 +86,25 @@ const ClockGrid = (function () {
       }
     }
 
-    // Ogni cifra occupa tutta l'altezza della griglia; la larghezza per cifra
-    // e' ricalcolata in base a quante cifre servono, cosi' un solo numero puo'
-    // riempire l'intero pannello invece di restare confinato in un angolo.
+    // La larghezza di una cifra resta SEMPRE 2 colonne (l'unita' minima del
+    // font a 7 segmenti: allargarla distorce la forma). Ogni cifra usa pero'
+    // tutta l'altezza della griglia, e lo spazio orizzontale in eccesso viene
+    // distribuito come spaziatura prima/tra/dopo le cifre invece di stirarle.
+    const DIGIT_W = 2;
     function showNumber(str) {
       const s = String(str);
-      const n = Math.max(1, Math.min(s.length, cfg.cols));
-      const digitW = Math.max(1, Math.floor(cfg.cols / n));
-      const totalUsed = digitW * n;
-      const leftMargin = Math.floor((cfg.cols - totalUsed) / 2);
+      const maxDigits = Math.max(1, Math.floor(cfg.cols / DIGIT_W));
+      const n = Math.max(1, Math.min(s.length, maxDigits));
       const chars = s.slice(-n).padStart(n, ' ').split('');
+      const leftover = cfg.cols - n * DIGIT_W;
+      const gaps = distribute(leftover, n + 1);
 
-      parkColumnRange(0, leftMargin);
-      parkColumnRange(leftMargin + totalUsed, cfg.cols);
+      parkAll();
+      let col = gaps[0];
       chars.forEach((ch, i) => {
         const d = /[0-9]/.test(ch) ? parseInt(ch, 10) : undefined;
-        renderDigitBlock(d, leftMargin + i * digitW, digitW);
+        renderDigitBlock(d, col, DIGIT_W);
+        col += DIGIT_W + gaps[i + 1];
       });
     }
 
