@@ -51,23 +51,49 @@ const ClockGrid = (function () {
       hand.style.transform = `rotate(${obj[cumProp]}deg)`;
     }
 
+    function segActiveFor(digit, key) {
+      const seg = ClockFont.SEG[digit];
+      return !!(seg && seg[key]);
+    }
+
     // Disegna una cifra su un blocco di `width` colonne che usa TUTTE le righe
-    // della griglia: i 6 ruoli del font vengono "spalmati" su sotto-blocchi
-    // proporzionali, cosi' la cifra si ingrandisce riempiendo lo spazio dato.
+    // della griglia. L'angolo in alto (ruoli 0/1), la giunzione centrale
+    // (ruoli 2/3) e l'angolo in basso (ruoli 4/5) restano righe singole
+    // identiche al font originale; le righe in eccesso vengono inserite
+    // come tratti verticali dritti (una vera linea continua N-S) tra un
+    // angolo e l'altro, cosi' i segmenti si allungano invece di spezzarsi.
     function renderDigitBlock(digit, colOffset, width) {
-      const colSizes = distribute(width, 2);
-      const rowSizes = distribute(cfg.rows, 3);
-      const colBoundary = colSizes[0];
-      const rowBoundary1 = rowSizes[0];
-      const rowBoundary2 = rowBoundary1 + rowSizes[1];
-      for (let r = 0; r < cfg.rows; r++) {
-        const band = r < rowBoundary1 ? 0 : (r < rowBoundary2 ? 1 : 2);
-        for (let c = 0; c < width; c++) {
-          const localCol = c < colBoundary ? 0 : 1;
-          const localRole = band * 2 + localCol;
-          const clk = clocks[cellIndex(r, colOffset + c)];
+      const H = cfg.rows;
+      const colBoundary = distribute(width, 2)[0];
+      const extra = Math.max(0, H - 3);
+      const [topRun, bottomRun] = distribute(extra, 2);
+      const midRow = 1 + topRun;
+      const bottomRow = H - 1;
+
+      for (let c = 0; c < width; c++) {
+        const localCol = c < colBoundary ? 0 : 1;
+        const absC = colOffset + c;
+        const topSegKey = localCol === 0 ? 'F' : 'B';
+        const bottomSegKey = localCol === 0 ? 'E' : 'C';
+        const stretchPark = ClockFont.ROLES[2 + localCol].park;
+
+        for (let r = 0; r < H; r++) {
+          const clk = clocks[cellIndex(r, absC)];
           if (!clk) continue;
-          const [a1, a2] = ClockFont.anglesForCell(digit, localRole);
+          let a1, a2;
+          if (r === 0) {
+            [a1, a2] = ClockFont.anglesForCell(digit, localCol);
+          } else if (r === midRow) {
+            [a1, a2] = ClockFont.anglesForCell(digit, 2 + localCol);
+          } else if (r === bottomRow) {
+            [a1, a2] = ClockFont.anglesForCell(digit, 4 + localCol);
+          } else if (r < midRow) {
+            const active = segActiveFor(digit, topSegKey);
+            [a1, a2] = active ? [ClockFont.N, ClockFont.S] : [stretchPark, stretchPark];
+          } else {
+            const active = segActiveFor(digit, bottomSegKey);
+            [a1, a2] = active ? [ClockFont.N, ClockFont.S] : [stretchPark, stretchPark];
+          }
           setHandTarget(clk.h1, 'cum1', clk, a1);
           setHandTarget(clk.h2, 'cum2', clk, a2);
         }
